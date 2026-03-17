@@ -151,21 +151,6 @@ exports.me = (req, res) => {
     }
 };
 
-exports.silentLogin = async (req, res) => {
-    try {
-        const authCodeUrlParameters = {
-            scopes: ["User.Read"],
-            redirectUri: process.env.REDIRECT_URI,
-            prompt: "none"
-        };
-
-        const url = await cca.getAuthCodeUrl(authCodeUrlParameters);
-        res.json({ silentLoginUrl: url });
-    } catch (err) {
-        console.error("Silent Login Error:", err);
-        res.status(500).json({ error: "Silent login failed" });
-    }
-};
 
 exports.verify = async (req, res) => {
     const token = req.cookies.access_token;
@@ -182,4 +167,4 @@ exports.verify = async (req, res) => {
     } catch (error) {
         res.status(401).json({ authenticated: false });
     }
-};
+};

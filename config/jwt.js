@@ -5,6 +5,6 @@ if (!process.env.ACCESS_SECRET || !process.env.REFRESH_SECRET) {
 module.exports = {
     accessSecret: process.env.ACCESS_SECRET || '1247192739812784912',
     refreshSecret: process.env.REFRESH_SECRET || '1247192739812784912',
-    accessExpiry: process.env.ACCESS_EXPIRY || "15m",
+    accessExpiry: process.env.ACCESS_EXPIRY || "1d",
     refreshExpiry: process.env.REFRESH_EXPIRY || "7d"
 };
