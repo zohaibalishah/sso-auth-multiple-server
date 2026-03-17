@@ -46,7 +46,7 @@ exports.microsoftLogin = async (req, res) => {
     try {
         const authCodeUrlParameters = {
             scopes: ["user.read"],
-            redirectUri: process.env.CALLBACK_REDIRECT_URL
+            redirectUri: `${req.protocol}://${req.get("host")}/auth/callback`
         };
         const response = await cca.getAuthCodeUrl(authCodeUrlParameters);
         res.redirect(response);
@@ -66,7 +66,7 @@ exports.microsoftCallback = async (req, res) => {
         const tokenResponse = await cca.acquireTokenByCode({
             code,
             scopes: ["user.read"],
-            redirectUri: process.env.CALLBACK_REDIRECT_URL
+            redirectUri: `${req.protocol}://${req.get("host")}/auth/callback`
         });
 
         const { localAccountId, username } = tokenResponse.account;
