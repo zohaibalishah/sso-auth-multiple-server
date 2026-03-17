@@ -21,16 +21,16 @@ const RefreshToken = {
 
 const setAuthCookies = (res, accessToken, refreshToken) => {
     const cookieOptions = {
-        httpOnly: true,
+        // httpOnly: true,
         secure: true,
         sameSite: "None",
         maxAge: 15 * 60 * 1000 // 15 mins for access token
     };
 
     // Support sharing cookies across subdomains if COOKIE_DOMAIN is provided
-    if (process.env.COOKIE_DOMAIN) {
-        cookieOptions.domain = process.env.COOKIE_DOMAIN;
-    }
+    // if (process.env.COOKIE_DOMAIN) {
+    //     cookieOptions.domain = process.env.COOKIE_DOMAIN;
+    // }
 
     res.cookie("access_token", accessToken, cookieOptions);
 
