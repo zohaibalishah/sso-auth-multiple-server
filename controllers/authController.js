@@ -70,16 +70,7 @@ exports.microsoftCallback = async (req, res) => {
 
 
 exports.logout = (req, res) => {
-    const token = req.cookies.refresh_token;
-    if (token) {
-        RefreshToken.delete(token);
-    }
-
     res.clearCookie("access_token");
-    res.clearCookie("refresh_token");
-
-    // Redirect to Microsoft logout and then back to our frontend
-    // process.env.FRONTEND_REDIRECT_URL || 
     const postLogoutRedirectUri = process.env.FRONTEND_REDIRECT_URL + "/login" || "http://localhost:5173/login";
     res.redirect(`https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`);
 };
