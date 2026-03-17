@@ -1,25 +1,9 @@
 const jwt = require("jsonwebtoken");
-const { v4: uuidv4 } = require("uuid");
 const jwtConfig = require("../config/jwt");
 const cca = require("../config/msalConfig");
 
-// In-memory storage for refresh tokens (Replace with DB in production)
-const refreshTokens = new Map();
 
-const RefreshToken = {
-    save: (data) => {
-        refreshTokens.set(data.token, { userId: data.userId, email: data.email });
-    },
-    find: (token) => {
-        const data = refreshTokens.get(token);
-        return data ? { token, ...data } : null;
-    },
-    delete: (token) => {
-        refreshTokens.delete(token);
-    }
-};
-
-const setAuthCookies = (res, accessToken, refreshToken) => {
+const setAuthCookies = (res, accessToken) => {
 
     // Check if we are running on localhost/development
     const cookieOptions = {
@@ -36,25 +20,19 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
 
     res.cookie("access_token", accessToken, cookieOptions);
 
-    if (refreshToken) {
-        res.cookie("refresh_token", refreshToken, {
-            ...cookieOptions,
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days for refresh token
-        });
-    }
 };
 
 exports.microsoftLogin = async (req, res) => {
     try {
         const authCodeUrlParameters = {
             scopes: ["user.read"],
-            redirectUri: 'https://central-auth-backend-api-hqcrdef4e2f5fyg9.northeurope-01.azurewebsites.net/auth/callback'
+            redirectUri: process.env.CALLBACK_REDIRECT_URL
         };
         const response = await cca.getAuthCodeUrl(authCodeUrlParameters);
         res.redirect(response);
     } catch (error) {
         console.error("Microsoft Login Error:", error);
-        res.status(500).send("External Authentication initialization failed");
+        res.status(500).send({ status: 0, message: "External Authentication initialization failed" });
     }
 };
 
@@ -68,7 +46,7 @@ exports.microsoftCallback = async (req, res) => {
         const tokenResponse = await cca.acquireTokenByCode({
             code,
             scopes: ["user.read"],
-            redirectUri: 'https://central-auth-backend-api-hqcrdef4e2f5fyg9.northeurope-01.azurewebsites.net/auth/callback'
+            redirectUri: process.env.CALLBACK_REDIRECT_URL
         });
 
         const { localAccountId, username } = tokenResponse.account;
@@ -80,48 +58,16 @@ exports.microsoftCallback = async (req, res) => {
             { expiresIn: jwtConfig.accessExpiry }
         );
 
-        // Refresh token
-        const refreshToken = uuidv4();
-        RefreshToken.save({ token: refreshToken, userId: localAccountId, email: username });
 
-        setAuthCookies(res, accessToken, refreshToken);
+        setAuthCookies(res, accessToken);
         res.redirect(process.env.FRONTEND_REDIRECT_URL);
     } catch (error) {
         console.error("Microsoft Callback Error:", error);
-        res.status(500).send("Authentication failed during callback");
+        res.status(500).send({ status: 0, message: "Authentication failed during callback" });
     }
 };
 
-exports.refresh = (req, res) => {
-    try {
-        const token = req.cookies.refresh_token;
-        if (!token) return res.status(401).json({ status: 0, message: "No token", loggedIn: false });
 
-        const stored = RefreshToken.find(token);
-        if (!stored) return res.status(403).json({ status: 0, message: "Invalid token", loggedIn: false });
-
-        const userId = stored.userId;
-        const email = stored.email;
-
-        // Rotate refresh token
-        RefreshToken.delete(token);
-        const newRefreshToken = uuidv4();
-        RefreshToken.save({ token: newRefreshToken, userId: userId, email: email });
-
-        // Generate new access token
-        const accessToken = jwt.sign(
-            { userId: userId, email: email },
-            jwtConfig.accessSecret,
-            { expiresIn: jwtConfig.accessExpiry }
-        );
-
-        setAuthCookies(res, accessToken, newRefreshToken);
-        res.json({ status: 1, message: "Token refreshed", loggedIn: true });
-    } catch (error) {
-        console.error("Token Refresh Error:", error);
-        res.status(500).json({ status: 0, message: "Internal server error during refresh" });
-    }
-};
 
 exports.logout = (req, res) => {
     const token = req.cookies.refresh_token;
@@ -134,7 +80,7 @@ exports.logout = (req, res) => {
 
     // Redirect to Microsoft logout and then back to our frontend
     // process.env.FRONTEND_REDIRECT_URL || 
-    const postLogoutRedirectUri = "http://localhost:5173/login";
+    const postLogoutRedirectUri = process.env.FRONTEND_REDIRECT_URL + "/login" || "http://localhost:5173/login";
     res.redirect(`https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`);
 };
 
@@ -158,49 +104,25 @@ exports.me = (req, res) => {
 };
 
 
-exports.verify = async (req, res) => {
+
+
+exports.generateSwapToken = async (req, res) => {
     const token = req.cookies.access_token;
-    if (!token) {
-        return res.status(401).json({ status: 0, message: "No token", loggedIn: false });
-    }
-
-    try {
-        const decoded = jwt.verify(token, jwtConfig.accessSecret);
-        res.json({
-            status: 1,
-            message: "Token verified",
-            loggedIn: true,
-            user: decoded
-        });
-    } catch (error) {
-        res.status(401).json({ status: 0, message: "Invalid token", loggedIn: false });
-    }
-};
-
-const usedTransitionTokens = new Set();
-
-exports.generateTransitionToken = async (req, res) => {
-    const token = req.cookies.access_token;
-    const { targetApp } = req.body;
-
     if (!token) {
         return res.status(401).json({ status: 0, message: "No session found" });
     }
 
     try {
         const user = jwt.verify(token, jwtConfig.accessSecret);
-        const jti = uuidv4();
         const transitionToken = jwt.sign(
             {
                 userId: user.userId,
                 email: user.email,
                 type: 'transition',
-                jti: jti
             },
             jwtConfig.accessSecret,
             {
                 expiresIn: '1m',
-                audience: targetApp || 'unknown-app' // Ensure token is used for the correct app
             }
         );
 
@@ -209,31 +131,28 @@ exports.generateTransitionToken = async (req, res) => {
         res.status(401).json({ status: 0, message: "Session expired or invalid" });
     }
 };
+const tokenUsed = new Set();
 
-
-exports.verifyTransitionToken = async (req, res) => {
+exports.verifySwapToken = async (req, res) => {
     const { token, targetApp } = req.body;
     if (!token) {
         return res.status(400).json({ status: 0, message: "Token required" });
     }
 
     try {
-        const decoded = jwt.verify(token, jwtConfig.accessSecret, {
-            audience: targetApp
-        });
-
+        const decoded = jwt.verify(token, jwtConfig.accessSecret);
         if (decoded.type !== 'transition') {
             return res.status(400).json({ status: 0, message: "Invalid token type" });
         }
 
-        if (usedTransitionTokens.has(decoded.jti)) {
+        if (tokenUsed.has(token)) {
             return res.status(403).json({ status: 0, message: "Token has already been used" });
         }
 
-        usedTransitionTokens.add(decoded.jti);
+        tokenUsed.add(token);
 
         setTimeout(() => {
-            usedTransitionTokens.delete(decoded.jti);
+            tokenUsed.delete(token);
         }, 120000);
 
         res.json({
