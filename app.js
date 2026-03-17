@@ -26,7 +26,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
     : [
         "http://localhost:5173",
         "http://localhost:4000",
-        "https://central-auth-frontend-api-hqcrdef4e2f5fyg9.northeurope-01.azurewebsites.net"
+        "https://central-auth-frontend-api-hqcrdef4e2f5fyg9.northeurope-01.azurewebsites.net",
+        "https://pmp-backend-stage.ntu.eu"
     ];
 
 app.use(cors({
