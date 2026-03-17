@@ -177,15 +177,11 @@ exports.verify = async (req, res) => {
     }
 };
 
-// In-memory storage for used transition tokens to prevent replay attacks
 const usedTransitionTokens = new Set();
 
-/**
- * Generate a short-lived token for cross-app SSO transition
- */
 exports.generateTransitionToken = async (req, res) => {
     const token = req.cookies.access_token;
-    const { targetApp } = req.body; // App name or ID (e.g., 'payroll')
+    const { targetApp } = req.body;
 
     if (!token) {
         return res.status(401).json({ status: 0, message: "No session found" });
@@ -193,17 +189,13 @@ exports.generateTransitionToken = async (req, res) => {
 
     try {
         const user = jwt.verify(token, jwtConfig.accessSecret);
-
-        // Create a unique ID for this specific handshake (JTI)
         const jti = uuidv4();
-
-        // Create a very short-lived token (1m) with audience restriction
         const transitionToken = jwt.sign(
             {
                 userId: user.userId,
                 email: user.email,
                 type: 'transition',
-                jti: jti // For replay protection
+                jti: jti
             },
             jwtConfig.accessSecret,
             {
@@ -218,9 +210,7 @@ exports.generateTransitionToken = async (req, res) => {
     }
 };
 
-/**
- * Verify a transition token (called by target app's backend)
- */
+
 exports.verifyTransitionToken = async (req, res) => {
     const { token, targetApp } = req.body;
     if (!token) {
@@ -229,25 +219,22 @@ exports.verifyTransitionToken = async (req, res) => {
 
     try {
         const decoded = jwt.verify(token, jwtConfig.accessSecret, {
-            audience: targetApp // Optional but recommended
+            audience: targetApp
         });
 
         if (decoded.type !== 'transition') {
             return res.status(400).json({ status: 0, message: "Invalid token type" });
         }
 
-        // Replay Protection: Check if this token (jti) has already been used
         if (usedTransitionTokens.has(decoded.jti)) {
             return res.status(403).json({ status: 0, message: "Token has already been used" });
         }
 
-        // "Burn" the token so it cannot be used again
         usedTransitionTokens.add(decoded.jti);
 
-        // Optional: Cleanup usedTransitionTokens periodically or after token expiry
         setTimeout(() => {
             usedTransitionTokens.delete(decoded.jti);
-        }, 120000); // 2 minutes (longer than 1m expiry)
+        }, 120000);
 
         res.json({
             status: 1,

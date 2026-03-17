@@ -29,20 +29,10 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
         "http://localhost:4000",
         "https://central-auth-frontend-api-hqcrdef4e2f5fyg9.northeurope-01.azurewebsites.net"
     ];
-
-app.use(cors({
-    origin: allowedOrigins,
-    credentials: true
-}));
-
+// allowedOrigins
+app.use(cors('*'));
 
 app.use("/auth", require("./routes/auth"));
-
-
-app.get("/hello", (req, res) => {
-    console.log("cookies", req.cookies)
-    return res.send("hello")
-})
 app.use((req, res) => {
     res.status(404).send(`
 <!DOCTYPE html>
