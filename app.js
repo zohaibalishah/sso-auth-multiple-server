@@ -1,4 +1,6 @@
-require("dotenv").config();
+const dotenv = require("dotenv");
+dotenv.config();
+
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -41,4 +43,4 @@ app.get("/hello", (req, res) => {
     return res.send("hello")
 })
 
-app.listen(PORT, () => console.log(`Auth Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Auth Server running on port http://localhost:${PORT}`));
