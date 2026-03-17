@@ -155,16 +155,18 @@ exports.me = (req, res) => {
 exports.verify = async (req, res) => {
     const token = req.cookies.access_token;
     if (!token) {
-        return res.status(401).json({ authenticated: false });
+        return res.status(401).json({ status: 0, message: "No token", loggedIn: false });
     }
 
     try {
         const decoded = jwt.verify(token, jwtConfig.accessSecret);
         res.json({
-            authenticated: true,
-            email: decoded.email
+            status: 1,
+            message: "Token verified",
+            loggedIn: true,
+            user: decoded
         });
     } catch (error) {
-        res.status(401).json({ authenticated: false });
+        res.status(401).json({ status: 0, message: "Invalid token", loggedIn: false });
     }
 };
