@@ -20,6 +20,7 @@ const RefreshToken = {
 };
 
 const setAuthCookies = (res, accessToken, refreshToken) => {
+
     // Check if we are running on localhost/development
     const cookieOptions = {
         // httpOnly: true,
@@ -47,7 +48,7 @@ exports.microsoftLogin = async (req, res) => {
     try {
         const authCodeUrlParameters = {
             scopes: ["user.read"],
-            redirectUri: `https://central-auth-backend-api-hqcrdef4e2f5fyg9.northeurope-01.azurewebsites.net/auth/callback`
+            redirectUri: 'https://central-auth-backend-api-hqcrdef4e2f5fyg9.northeurope-01.azurewebsites.net/auth/callback'
         };
         const response = await cca.getAuthCodeUrl(authCodeUrlParameters);
         res.redirect(response);
@@ -67,7 +68,7 @@ exports.microsoftCallback = async (req, res) => {
         const tokenResponse = await cca.acquireTokenByCode({
             code,
             scopes: ["user.read"],
-            redirectUri: `https://central-auth-backend-api-hqcrdef4e2f5fyg9.northeurope-01.azurewebsites.net/auth/callback`
+            redirectUri: 'https://central-auth-backend-api-hqcrdef4e2f5fyg9.northeurope-01.azurewebsites.net/auth/callback'
         });
 
         const { localAccountId, username } = tokenResponse.account;
