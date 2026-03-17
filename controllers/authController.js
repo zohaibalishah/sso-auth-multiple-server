@@ -134,7 +134,7 @@ exports.logout = (req, res) => {
 
     // Redirect to Microsoft logout and then back to our frontend
     // process.env.FRONTEND_REDIRECT_URL || 
-    const postLogoutRedirectUri = "http://localhost:5173";
+    const postLogoutRedirectUri = "http://localhost:5173/login";
     res.redirect(`https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`);
 };
 
