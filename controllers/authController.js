@@ -172,3 +172,53 @@ exports.verify = async (req, res) => {
         res.status(401).json({ status: 0, message: "Invalid token", loggedIn: false });
     }
 };
+
+/**
+ * Generate a short-lived token for cross-app SSO transition
+ */
+exports.generateTransitionToken = async (req, res) => {
+    const token = req.cookies.access_token;
+    if (!token) {
+        return res.status(401).json({ status: 0, message: "No session found" });
+    }
+
+    try {
+        const user = jwt.verify(token, jwtConfig.accessSecret);
+        
+        // Create a very short-lived token (30-60s) for the handshake
+        const transitionToken = jwt.sign(
+            { userId: user.userId, email: user.email, type: 'transition' },
+            jwtConfig.accessSecret,
+            { expiresIn: '1m' }
+        );
+
+        res.json({ status: 1, token: transitionToken });
+    } catch (error) {
+        res.status(401).json({ status: 0, message: "Session expired or invalid" });
+    }
+};
+
+/**
+ * Verify a transition token (called by target app's backend)
+ */
+exports.verifyTransitionToken = async (req, res) => {
+    const { token } = req.body;
+    if (!token) {
+        return res.status(400).json({ status: 0, message: "Token required" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, jwtConfig.accessSecret);
+        
+        if (decoded.type !== 'transition') {
+            return res.status(400).json({ status: 0, message: "Invalid token type" });
+        }
+
+        res.json({
+            status: 1,
+            user: { userId: decoded.userId, email: decoded.email }
+        });
+    } catch (error) {
+        res.status(401).json({ status: 0, message: "Token expired or invalid" });
+    }
+};
