@@ -22,7 +22,7 @@ const RefreshToken = {
 const setAuthCookies = (res, accessToken, refreshToken) => {
     // Check if we are running on localhost/development
     const cookieOptions = {
-        httpOnly: true,
+        // httpOnly: true,
         secure: false,
         sameSite: 'Lax',
         maxAge: 15 * 60 * 1000 // 15 mins for access token
