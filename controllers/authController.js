@@ -20,10 +20,13 @@ const RefreshToken = {
 };
 
 const setAuthCookies = (res, accessToken, refreshToken) => {
+    // Check if we are running on localhost/development
+    const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
+
     const cookieOptions = {
-        // httpOnly: true,
-        secure: true,
-        sameSite: "None",
+        httpOnly: true,
+        secure: !isDevelopment, // Disable secure for local HTTP
+        sameSite: isDevelopment ? "Lax" : "None",
         maxAge: 15 * 60 * 1000 // 15 mins for access token
     };
 
