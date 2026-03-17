@@ -23,9 +23,9 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
 
     // Check if we are running on localhost/development
     const cookieOptions = {
-        // httpOnly: true,
-        secure: false,
-        sameSite: 'Lax',
+        httpOnly: true,
+        secure: true, // Required for SameSite=None
+        sameSite: 'none', // Required for cross-origin cookies
         maxAge: 15 * 60 * 1000 // 15 mins for access token
     };
 
