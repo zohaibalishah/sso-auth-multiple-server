@@ -10,7 +10,7 @@ const setAuthCookies = (res, accessToken) => {
         httpOnly: true,
         secure: true, // Required for SameSite=None
         sameSite: 'none', // Required for cross-origin cookies
-        maxAge: 15 * 60 * 1000 // 15 mins for access token
+        maxAge: 24 * 60 * 60 * 1000 // 1 day for access token
     };
 
     // Support sharing cookies across subdomains if COOKIE_DOMAIN is provided
