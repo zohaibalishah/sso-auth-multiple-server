@@ -60,6 +60,18 @@ exports.microsoftCallback = async (req, res) => {
 
 
         setAuthCookies(res, accessToken);
+
+        const msIdTokenOptions = {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 24 * 60 * 60 * 1000 // 1 day
+        };
+        if (process.env.COOKIE_DOMAIN) {
+            msIdTokenOptions.domain = process.env.COOKIE_DOMAIN;
+        }
+        res.cookie("ms_id_token", tokenResponse.idToken, msIdTokenOptions);
+
         res.redirect(process.env.FRONTEND_REDIRECT_URL);
     } catch (error) {
         console.error("Microsoft Callback Error:", error);
@@ -70,9 +82,17 @@ exports.microsoftCallback = async (req, res) => {
 
 
 exports.logout = (req, res) => {
+    const msIdToken = req.cookies.ms_id_token;
+
     res.clearCookie("access_token");
-    const postLogoutRedirectUri = process.env.FRONTEND_REDIRECT_URL + "/login" || "http://localhost:5173/login";
-    res.redirect(`https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`);
+    res.clearCookie("ms_id_token");
+    const frontendUrl = process.env.FRONTEND_REDIRECT_URL || "http://localhost:5173";
+    const postLogoutRedirectUri = frontendUrl + "/login";
+    let logoutUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
+    if (msIdToken) {
+        logoutUrl += `&id_token_hint=${encodeURIComponent(msIdToken)}`;
+    }
+    res.redirect(logoutUrl);
 };
 
 exports.me = (req, res) => {
