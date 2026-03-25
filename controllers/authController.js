@@ -84,14 +84,25 @@ exports.microsoftCallback = async (req, res) => {
 exports.logout = (req, res) => {
     const msIdToken = req.cookies.ms_id_token;
 
-    res.clearCookie("access_token");
-    res.clearCookie("ms_id_token");
+    // Support sharing cookies across subdomains if COOKIE_DOMAIN is provided
+    const cookieOptions = {};
+    if (process.env.COOKIE_DOMAIN) {
+        cookieOptions.domain = process.env.COOKIE_DOMAIN;
+    }
+
+    res.clearCookie("access_token", cookieOptions);
+    res.clearCookie("ms_id_token", cookieOptions);
+
     const frontendUrl = process.env.FRONTEND_REDIRECT_URL || "http://localhost:5173";
     const postLogoutRedirectUri = frontendUrl + "/login";
-    let logoutUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
+
+    const tenantId = process.env.MS_TENANT_ID || "common";
+    let logoutUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
+
     if (msIdToken) {
         logoutUrl += `&id_token_hint=${encodeURIComponent(msIdToken)}`;
     }
+
     res.redirect(logoutUrl);
 };
 
