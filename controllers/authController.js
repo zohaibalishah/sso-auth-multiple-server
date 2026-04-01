@@ -10,7 +10,6 @@ const setAuthCookies = (res, accessToken) => {
         httpOnly: true,
         secure: true, // Required for SameSite=None
         sameSite: 'none', // Required for cross-origin cookies
-        maxAge: 24 * 60 * 60 * 1000 // 1 day for access token
     };
 
     // Support sharing cookies across subdomains if COOKIE_DOMAIN is provided
@@ -54,8 +53,7 @@ exports.microsoftCallback = async (req, res) => {
         // Access token
         const accessToken = jwt.sign(
             { userId: localAccountId, email: username },
-            jwtConfig.accessSecret,
-            { expiresIn: jwtConfig.accessExpiry }
+            jwtConfig.accessSecret
         );
 
 
@@ -65,7 +63,6 @@ exports.microsoftCallback = async (req, res) => {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            maxAge: 24 * 60 * 60 * 1000 // 1 day
         };
         if (process.env.COOKIE_DOMAIN) {
             msIdTokenOptions.domain = process.env.COOKIE_DOMAIN;
