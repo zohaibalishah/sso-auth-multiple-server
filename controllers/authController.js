@@ -113,6 +113,7 @@ exports.logout = (req, res) => {
     // if (msIdToken) {
     //     logoutUrl.searchParams.append("id_token_hint", msIdToken);
     // }
+    console.log(logoutEndpoint);
 
     return res.redirect(logoutEndpoint);
 };
