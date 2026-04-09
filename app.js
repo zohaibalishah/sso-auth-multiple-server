@@ -39,6 +39,9 @@ app.use(cors({
 app.use("/auth", require("./routes/auth"));
 
 
+app.get("/version", (req, res) => {
+    res.send("1.0.1");
+});
 
 app.use((req, res) => {
     res.status(404).send(`
