@@ -40,7 +40,7 @@ app.use("/auth", require("./routes/auth"));
 
 
 app.get("/version", (req, res) => {
-    res.send("1.0.2");
+    res.send("1.0.3");
 });
 
 app.use((req, res) => {

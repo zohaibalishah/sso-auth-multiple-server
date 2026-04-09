@@ -100,7 +100,7 @@ exports.logout = (req, res) => {
     const clientId = process.env.MS_CLIENT_ID;
 
     // Create Microsoft logout URL with required parameters
-    const logoutEndpoint = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/logout?post_logout_redirect_uri=${frontendUrl}`;
+    const logoutEndpoint = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/logout?post_logout_redirect_uri=${postLogoutRedirectUri}`;
     // const logoutUrl = new URL(logoutEndpoint);
 
     // post_logout_redirect_uri is only honored if id_token_hint or client_id is provided
