@@ -93,14 +93,14 @@ exports.logout = (req, res) => {
     res.clearCookie("access_token", cookieOptions);
     res.clearCookie("ms_id_token", cookieOptions);
 
-    const frontendUrl = 'https://victorious-wave-09c640a03.2.azurestaticapps.net'
+    const frontendUrl = encodeURIComponent('https://victorious-wave-09c640a03.2.azurestaticapps.net')
     const postLogoutRedirectUri = frontendUrl + "/login";
 
     const tenantId = process.env.MS_TENANT_ID || "common";
     const clientId = process.env.MS_CLIENT_ID;
 
     // Create Microsoft logout URL with required parameters
-    const logoutEndpoint = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/logout?post_logout_redirect_uri=${postLogoutRedirectUri}`;
+    const logoutEndpoint = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/logout?post_logout_redirect_uri=${frontendUrl}`;
     // const logoutUrl = new URL(logoutEndpoint);
 
     // post_logout_redirect_uri is only honored if id_token_hint or client_id is provided
@@ -114,7 +114,7 @@ exports.logout = (req, res) => {
     //     logoutUrl.searchParams.append("id_token_hint", msIdToken);
     // }
 
-    res.redirect(logoutEndpoint);
+    return res.redirect(logoutEndpoint);
 };
 
 exports.me = (req, res) => {
