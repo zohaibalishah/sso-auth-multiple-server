@@ -93,7 +93,7 @@ exports.logout = (req, res) => {
     res.clearCookie("access_token", cookieOptions);
     res.clearCookie("ms_id_token", cookieOptions);
 
-    const frontendUrl = process.env.FRONTEND_REDIRECT_URL || "http://localhost:5173";
+    const frontendUrl = 'https://victorious-wave-09c640a03.2.azurestaticapps.net'
     const postLogoutRedirectUri = frontendUrl + "/login";
 
     const tenantId = process.env.MS_TENANT_ID || "common";
