@@ -10,6 +10,7 @@ const setAuthCookies = (res, accessToken) => {
         httpOnly: true,
         secure: true, // Required for SameSite=None
         sameSite: 'none', // Required for cross-origin cookies
+        maxAge: 30 * 60 * 1000 // 30 minutes
     };
 
     // Support sharing cookies across subdomains if COOKIE_DOMAIN is provided
@@ -53,7 +54,8 @@ exports.microsoftCallback = async (req, res) => {
         // Access token
         const accessToken = jwt.sign(
             { userId: localAccountId, email: username },
-            jwtConfig.accessSecret
+            jwtConfig.accessSecret,
+            { expiresIn: '30m' }
         );
 
 
@@ -63,6 +65,7 @@ exports.microsoftCallback = async (req, res) => {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
+            maxAge: 30 * 60 * 1000 // 30 minutes
         };
         if (process.env.COOKIE_DOMAIN) {
             msIdTokenOptions.domain = process.env.COOKIE_DOMAIN;
@@ -99,14 +102,14 @@ exports.logout = (req, res) => {
     // Create Microsoft logout URL with required parameters
     const logoutEndpoint = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/logout`;
     const logoutUrl = new URL(logoutEndpoint);
-    
+
     // post_logout_redirect_uri is only honored if id_token_hint or client_id is provided
     logoutUrl.searchParams.append("post_logout_redirect_uri", postLogoutRedirectUri);
-    
+
     if (clientId) {
         logoutUrl.searchParams.append("client_id", clientId);
     }
-    
+
     if (msIdToken) {
         logoutUrl.searchParams.append("id_token_hint", msIdToken);
     }
