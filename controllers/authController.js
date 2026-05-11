@@ -3,21 +3,23 @@ const jwtConfig = require("../config/jwt");
 const cca = require("../config/msalConfig");
 
 
-const setAuthCookies = (res, name, value) => {
+const setAuthCookies = (res, accessToken) => {
+
+    // Check if we are running on localhost/development
     const cookieOptions = {
         httpOnly: true,
         secure: true, // Required for SameSite=None
         sameSite: 'none', // Required for cross-origin cookies
-        maxAge: 30 * 60 * 1000, // 30 minutes
-        // path: '/',
-        // partitioned: true // Helps with cross-site cookie partitioning in Firefox/Chrome
+        maxAge: 30 * 60 * 1000 // 30 minutes
     };
 
+    // Support sharing cookies across subdomains if COOKIE_DOMAIN is provided
     if (process.env.COOKIE_DOMAIN) {
         cookieOptions.domain = process.env.COOKIE_DOMAIN;
     }
 
-    res.cookie(name, value, cookieOptions);
+    res.cookie("access_token", accessToken, cookieOptions);
+
 };
 
 exports.microsoftLogin = async (req, res) => {
@@ -46,10 +48,7 @@ exports.microsoftCallback = async (req, res) => {
             scopes: ["user.read"],
             redirectUri: process.env.CALLBACK_REDIRECT_URL
         });
-
-        const { username, localAccountId } = tokenResponse;
-
-        console.log(`Successfully authenticated user: ${username}`);
+        const { localAccountId, username } = tokenResponse.account;
 
         // Access token
         const accessToken = jwt.sign(
@@ -59,13 +58,23 @@ exports.microsoftCallback = async (req, res) => {
         );
 
 
-        setAuthCookies(res, "access_token", accessToken);
-        setAuthCookies(res, "ms_id_token", tokenResponse.idToken);
+        setAuthCookies(res, accessToken);
+
+        const msIdTokenOptions = {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 30 * 60 * 1000 // 30 minutes
+        };
+        if (process.env.COOKIE_DOMAIN) {
+            msIdTokenOptions.domain = process.env.COOKIE_DOMAIN;
+        }
+        res.cookie("ms_id_token", tokenResponse.idToken, msIdTokenOptions);
 
         res.redirect(process.env.FRONTEND_REDIRECT_URL);
     } catch (error) {
         console.error("Microsoft Callback Error:", error);
-        res.status(500).send({ status: 0, message: error.message });
+        res.status(500).send({ status: 0, message: "Authentication failed during callback" });
     }
 };
 
@@ -77,9 +86,10 @@ exports.logout = (req, res) => {
         httpOnly: true,
         secure: true,
         sameSite: 'none',
-        path: '/',
-        partitioned: true
+        path: '/'
     };
+    // Support sharing cookies across subdomains if COOKIE_DOMAIN is provided
+    // const cookieOptions = {};
     if (process.env.COOKIE_DOMAIN) {
         cookieOptions.domain = process.env.COOKIE_DOMAIN;
     }
