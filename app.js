@@ -41,7 +41,7 @@ app.use("/auth", require("./routes/auth"));
 
 
 app.get("/version", (req, res) => {
-    res.send("1.0.3");
+    res.send("1.0.4");
 });
 
 app.use((req, res) => {
@@ -115,7 +115,7 @@ app.use((req, res) => {
 </head>
 <body>
     <div class="container">
-        <h1>404 v1.0.2</h1>
+        <h1>404</h1>
         <p>Oops! The page you're looking for doesn't exist.</p>
         <a href="/" class="btn">Go Back Home</a>
     </div>

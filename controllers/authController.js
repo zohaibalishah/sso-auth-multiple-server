@@ -9,8 +9,8 @@ const setAuthCookies = (res, name, value) => {
         secure: true, // Required for SameSite=None
         sameSite: 'none', // Required for cross-origin cookies
         maxAge: 30 * 60 * 1000, // 30 minutes
-        path: '/',
-        partitioned: true // Helps with cross-site cookie partitioning in Firefox/Chrome
+        // path: '/',
+        // partitioned: true // Helps with cross-site cookie partitioning in Firefox/Chrome
     };
 
     if (process.env.COOKIE_DOMAIN) {
