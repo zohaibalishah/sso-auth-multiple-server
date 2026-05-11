@@ -71,7 +71,19 @@ exports.microsoftCallback = async (req, res) => {
         }
         res.cookie("ms_id_token", tokenResponse.idToken, msIdTokenOptions);
 
-        res.redirect(process.env.FRONTEND_REDIRECT_URL);
+        // Generate a short-lived transition token for the URL
+        const transitionToken = jwt.sign(
+            { userId: localAccountId, email: username, type: 'transition' },
+            jwtConfig.accessSecret,
+            { expiresIn: '1m' }
+        );
+
+        // Redirect to frontend with token in query params
+        const frontendUrl = process.env.FRONTEND_REDIRECT_URL;
+        const url = new URL(frontendUrl);
+        url.searchParams.append("token", transitionToken);
+        
+        res.redirect(url.toString());
     } catch (error) {
         console.error("Microsoft Callback Error:", error);
         res.status(500).send({ status: 0, message: error.message });
@@ -193,9 +205,17 @@ exports.verifySwapToken = async (req, res) => {
             tokenUsed.delete(token);
         }, 120000);
 
+        // Generate a fresh long-lived access token for the frontend to store
+        const accessToken = jwt.sign(
+            { userId: decoded.userId, email: decoded.email },
+            jwtConfig.accessSecret,
+            { expiresIn: '30m' }
+        );
+
         res.json({
             status: 1,
-            user: { userId: decoded.userId, email: decoded.email }
+            user: { userId: decoded.userId, email: decoded.email },
+            token: accessToken
         });
     } catch (error) {
         res.status(401).json({ status: 0, message: "Token expired, invalid, or wrong audience" });
