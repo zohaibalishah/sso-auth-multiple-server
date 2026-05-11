@@ -7,6 +7,7 @@ router.get("/logout/microsoft", authController.logout);
 router.get("/me", authController.me);
 router.post("/handshake/token", authController.generateSwapToken);
 router.post("/handshake/verify", authController.verifySwapToken);
+router.post("/handshake/callback", authController.verifyHandshakeToken);
 
 
 module.exports = router;

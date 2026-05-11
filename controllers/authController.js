@@ -82,7 +82,7 @@ exports.microsoftCallback = async (req, res) => {
         const frontendUrl = process.env.FRONTEND_REDIRECT_URL;
         const url = new URL(frontendUrl);
         url.searchParams.append("token", transitionToken);
-        
+
         res.redirect(url.toString());
     } catch (error) {
         console.error("Microsoft Callback Error:", error);
@@ -135,7 +135,13 @@ exports.logout = (req, res) => {
 };
 
 exports.me = (req, res) => {
-    const token = req.cookies.access_token;
+    // Check cookie first, then fallback to Authorization header
+    let token = req.cookies.access_token;
+
+    if (!token && req.headers.authorization) {
+        token = req.headers.authorization.split(' ')[1]; // Extract from "Bearer <token>"
+    }
+
     if (!token) {
         return res.status(401).json({ status: 0, message: "Session timeout", loggedIn: false });
     }
@@ -149,7 +155,7 @@ exports.me = (req, res) => {
             user
         });
     } catch (error) {
-        res.status(401).json({ status: 0, message: "Invalid session", loggedIn: false });
+        res.status(401).json({ status: 0, message: error.message, loggedIn: false });
     }
 };
 
@@ -157,9 +163,15 @@ exports.me = (req, res) => {
 
 
 exports.generateSwapToken = async (req, res) => {
-    const token = req.cookies.access_token;
+    // Check cookie first, then fallback to Authorization header
+    let token = req.cookies.access_token;
+
+    if (!token && req.headers.authorization) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+
     if (!token) {
-        return res.status(401).json({ status: 0, message: "No session found" });
+        return res.status(401).json({ status: 0, message: "No token found" });
     }
 
     try {
@@ -178,13 +190,45 @@ exports.generateSwapToken = async (req, res) => {
 
         res.json({ status: 1, token: transitionToken });
     } catch (error) {
-        res.status(401).json({ status: 0, message: "Session expired or invalid" });
+        res.status(401).json({ status: 0, message: error.message });
     }
 };
 const tokenUsed = new Set();
 
 exports.verifySwapToken = async (req, res) => {
     const { token, targetApp } = req.body;
+    if (!token) {
+        return res.status(400).json({ status: 0, message: "Token required" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, jwtConfig.accessSecret);
+        if (decoded.type !== 'transition') {
+            return res.status(400).json({ status: 0, message: "Invalid token type" });
+        }
+
+        if (tokenUsed.has(token)) {
+            return res.status(403).json({ status: 0, message: "Token has already been used" });
+        }
+
+        tokenUsed.add(token);
+
+        setTimeout(() => {
+            tokenUsed.delete(token);
+        }, 120000);
+
+        res.json({
+            status: 1,
+            user: { userId: decoded.userId, email: decoded.email }
+        });
+    } catch (error) {
+        res.status(401).json({ status: 0, message: "Token expired, invalid, or wrong audience" });
+    }
+};
+
+// Dedicated for internal frontend login to bypass cookie issues
+exports.verifyHandshakeToken = async (req, res) => {
+    const { token } = req.body;
     if (!token) {
         return res.status(400).json({ status: 0, message: "Token required" });
     }
@@ -218,6 +262,6 @@ exports.verifySwapToken = async (req, res) => {
             token: accessToken
         });
     } catch (error) {
-        res.status(401).json({ status: 0, message: "Token expired, invalid, or wrong audience" });
+        res.status(401).json({ status: 0, message: "Token expired or invalid" });
     }
 };
