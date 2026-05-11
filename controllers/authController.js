@@ -74,7 +74,7 @@ exports.microsoftCallback = async (req, res) => {
         res.redirect(process.env.FRONTEND_REDIRECT_URL);
     } catch (error) {
         console.error("Microsoft Callback Error:", error);
-        res.status(500).send({ status: 0, message: "Authentication failed during callback" });
+        res.status(500).send({ status: 0, message: error.message });
     }
 };
 
