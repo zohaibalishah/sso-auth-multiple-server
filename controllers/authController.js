@@ -3,23 +3,20 @@ const jwtConfig = require("../config/jwt");
 const cca = require("../config/msalConfig");
 
 
-const setAuthCookies = (res, accessToken) => {
-
-    // Check if we are running on localhost/development
+const setAuthCookies = (res, name, value) => {
     const cookieOptions = {
         httpOnly: true,
         secure: true, // Required for SameSite=None
         sameSite: 'none', // Required for cross-origin cookies
-        maxAge: 30 * 60 * 1000 // 30 minutes
+        maxAge: 30 * 60 * 1000, // 30 minutes
+        path: '/'
     };
 
-    // Support sharing cookies across subdomains if COOKIE_DOMAIN is provided
     if (process.env.COOKIE_DOMAIN) {
         cookieOptions.domain = process.env.COOKIE_DOMAIN;
     }
 
-    res.cookie("access_token", accessToken, cookieOptions);
-
+    res.cookie(name, value, cookieOptions);
 };
 
 exports.microsoftLogin = async (req, res) => {
@@ -49,8 +46,8 @@ exports.microsoftCallback = async (req, res) => {
             redirectUri: process.env.CALLBACK_REDIRECT_URL
         });
 
-        const { localAccountId, username } = tokenResponse.account;
-
+        console.log(`Successfully authenticated user: ${username}`);
+        
         // Access token
         const accessToken = jwt.sign(
             { userId: localAccountId, email: username },
@@ -59,18 +56,8 @@ exports.microsoftCallback = async (req, res) => {
         );
 
 
-        setAuthCookies(res, accessToken);
-
-        const msIdTokenOptions = {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            maxAge: 30 * 60 * 1000 // 30 minutes
-        };
-        if (process.env.COOKIE_DOMAIN) {
-            msIdTokenOptions.domain = process.env.COOKIE_DOMAIN;
-        }
-        res.cookie("ms_id_token", tokenResponse.idToken, msIdTokenOptions);
+        setAuthCookies(res, "access_token", accessToken);
+        setAuthCookies(res, "ms_id_token", tokenResponse.idToken);
 
         res.redirect(process.env.FRONTEND_REDIRECT_URL);
     } catch (error) {
@@ -83,9 +70,12 @@ exports.microsoftCallback = async (req, res) => {
 
 exports.logout = (req, res) => {
     const msIdToken = req.cookies.ms_id_token;
-
-    // Support sharing cookies across subdomains if COOKIE_DOMAIN is provided
-    const cookieOptions = {};
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        path: '/'
+    };
     if (process.env.COOKIE_DOMAIN) {
         cookieOptions.domain = process.env.COOKIE_DOMAIN;
     }

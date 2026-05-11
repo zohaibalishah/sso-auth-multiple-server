@@ -7,6 +7,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit")
 const app = express();
+app.set("trust proxy", 1);
 
 
 app.use(morgan("dev"));
@@ -114,7 +115,7 @@ app.use((req, res) => {
 </head>
 <body>
     <div class="container">
-        <h1>404</h1>
+        <h1>404 v1.0.2</h1>
         <p>Oops! The page you're looking for doesn't exist.</p>
         <a href="/" class="btn">Go Back Home</a>
     </div>
