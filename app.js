@@ -7,7 +7,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit")
 const app = express();
-app.set("trust proxy", 1);
+// app.set("trust proxy", 1);
 
 
 app.use(morgan("dev"));
@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 4000;
 
 // CORS for dashboard + apps
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map(origin => origin.trim().replace(/;$/, ""))
+    ? process.env.ALLOWED_ORIGINS.split(",")
     : [
         "http://localhost:5173",
         "http://localhost:4000",
