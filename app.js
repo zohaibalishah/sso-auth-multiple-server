@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 4000;
 
 // CORS for dashboard + apps
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",")
+    ? process.env.ALLOWED_ORIGINS.split(",").map(origin => origin.trim().replace(/;$/, ""))
     : [
         "http://localhost:5173",
         "http://localhost:4000",

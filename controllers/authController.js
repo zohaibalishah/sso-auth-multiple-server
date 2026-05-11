@@ -9,7 +9,8 @@ const setAuthCookies = (res, name, value) => {
         secure: true, // Required for SameSite=None
         sameSite: 'none', // Required for cross-origin cookies
         maxAge: 30 * 60 * 1000, // 30 minutes
-        path: '/'
+        path: '/',
+        partitioned: true // Helps with cross-site cookie partitioning in Firefox/Chrome
     };
 
     if (process.env.COOKIE_DOMAIN) {
@@ -46,8 +47,10 @@ exports.microsoftCallback = async (req, res) => {
             redirectUri: process.env.CALLBACK_REDIRECT_URL
         });
 
+        const { username, localAccountId } = tokenResponse;
+
         console.log(`Successfully authenticated user: ${username}`);
-        
+
         // Access token
         const accessToken = jwt.sign(
             { userId: localAccountId, email: username },
@@ -62,7 +65,7 @@ exports.microsoftCallback = async (req, res) => {
         res.redirect(process.env.FRONTEND_REDIRECT_URL);
     } catch (error) {
         console.error("Microsoft Callback Error:", error);
-        res.status(500).send({ status: 0, message: "Authentication failed during callback" });
+        res.status(500).send({ status: 0, message: error.message });
     }
 };
 
@@ -74,7 +77,8 @@ exports.logout = (req, res) => {
         httpOnly: true,
         secure: true,
         sameSite: 'none',
-        path: '/'
+        path: '/',
+        partitioned: true
     };
     if (process.env.COOKIE_DOMAIN) {
         cookieOptions.domain = process.env.COOKIE_DOMAIN;
