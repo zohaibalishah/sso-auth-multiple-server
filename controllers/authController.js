@@ -193,6 +193,37 @@ exports.generateSwapToken = async (req, res) => {
         res.status(401).json({ status: 0, message: error.message });
     }
 };
+
+
+exports.generateSwapTokenV2 = async (req, res) => {
+
+    if (req.headers.authorization) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+        return res.status(401).json({ status: 0, message: "No token found" });
+    }
+
+    try {
+        const user = jwt.verify(token, jwtConfig.accessSecret);
+        const transitionToken = jwt.sign(
+            {
+                userId: user.userId,
+                email: user.email,
+                type: 'transition',
+            },
+            jwtConfig.accessSecret,
+            {
+                expiresIn: '1m',
+            }
+        );
+
+        res.json({ status: 1, token: transitionToken });
+    } catch (error) {
+        res.status(401).json({ status: 0, message: error.message });
+    }
+};
 const tokenUsed = new Set();
 
 exports.verifySwapToken = async (req, res) => {
