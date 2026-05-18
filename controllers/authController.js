@@ -284,7 +284,7 @@ exports.verifyHandshakeToken = async (req, res) => {
         const accessToken = jwt.sign(
             { userId: decoded.userId, email: decoded.email },
             jwtConfig.accessSecret,
-            // { expiresIn: '30m' }
+            { expiresIn: '30m' }
         );
 
         res.json({
